@@ -387,7 +387,7 @@ window.previewCourse = async (id) => {
   if (!c) return;
 
   // 1) 텍스트/수치 채우기
-  document.getElementById('cpTitle').textContent = c.name || '코스 미리보기';
+  document.getElementById('cpName').textContent = c.name || '코스 미리보기';
   document.getElementById('cpDist').textContent  = (c.distance || 0).toFixed(1);
   document.getElementById('cpElev').textContent  = Math.round(c.elev || 0);
 
