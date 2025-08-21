@@ -1126,7 +1126,7 @@ input, select, textarea{
 
 .cp-body{ overflow: hidden; }
 #coursePreviewMap{
-  width: 100%;
+  width: 300px;
   height: clamp(260px, 45vh, 420px);    /* 화면 크기에 맞게 충분히 큼 */
 }
 
