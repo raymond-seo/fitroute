@@ -427,23 +427,23 @@ window.previewCourse = async (id) => {
     }
   }
 
-  // 4) 버튼/닫기 바인딩  (★ 여기만 교체)
+  // 4) 버튼/닫기 바인딩
   document.getElementById('cpSelectBtn').onclick = async () => {
     window.selectedCourse = c;          // 전역에도 보관
     sheet.classList.remove('show');     // 모달 닫기
-    alert(`'${c.name}' 코스를 선택했습니다.`);
-
-    // ★ 선택 즉시 기록탭으로 이동 + 지도에 GPX 그리기
-    await loadAndDrawGpx(c.gpx);        // 내부에서 show('record') + initKakaoMap + drawTrackOnMap 실행
+    alert(`'${c.name}' 코스를 선택했습니다.`); 
+  
+  await loadAndDrawGpx(c.gpx);
   };
-
+ 
   const close = () => sheet.classList.remove('show');
   document.getElementById('cpCloseBtn').onclick = close;
 
-  // 바깥(오버레이) 클릭하면 닫기
+  // 바깥(오버레이) 클릭하면 닫기 (모달 내부 클릭은 유지)
   sheet.onclick = (e) => {
     if (e.target === sheet) close();
   };
+};
 
   window.selectCourse = async (id) => {
     const c = all.find(x => x.id === id);
