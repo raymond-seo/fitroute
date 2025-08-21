@@ -381,12 +381,53 @@ async function initCoursesScreen() {
     }
   }
 
-  // 5) 전역 핸들러 연결 (미리보기/선택 둘 다 라인 그리도록 통일)
-  window.previewCourse = async (id) => {
-    const c = all.find(x => x.id === id);
-    if (!c) return;
-    await loadAndDrawGpx(c.gpx);
+// 5) 전역 핸들러 연결 (미리보기 = 모달에서 지도/정보 표시, 선택 = 기록 탭 이동)
+window.previewCourse = async (id) => {
+  const c = all.find(x => x.id === id);
+  if (!c) return;
+
+  // 1) 모달 텍스트 채우기
+  document.getElementById('cpName').textContent = c.name || '코스';
+  const cityEl = document.getElementById('cpCity');
+  cityEl.textContent = c.city || '';
+  cityEl.style.display = c.city ? '' : 'none';
+  document.getElementById('cpDist').textContent = (c.distance || 0).toFixed(1);
+  document.getElementById('cpElev').textContent = Math.round(c.elev || 0);
+
+  // 2) 버튼 바인딩
+  const sheet = document.getElementById('coursePreviewSheet');
+  document.getElementById('cpCloseBtn').onclick = () => closeSheet(sheet);
+  document.getElementById('cpSelectBtn').onclick = async () => {
+    // 코스 선택 후 기록 화면으로 이동하여 라인 그리기
+    window.selectedCourse = c;
+    selectedCourse = c;
+    closeSheet(sheet);
+    await loadAndDrawGpx(c.gpx); // 기존 함수: record 화면으로 전환 + 지도 드로잉
   };
+
+  // 3) 모달 열고 지도 초기화
+  openSheet(sheet);
+  initCoursePreviewMap();
+
+  // 4) GPX 로드해서 프리뷰 지도에 라인 그리기
+  try {
+    const cleanedUrl = (c.gpx || '').trim().replaceAll('<','').replaceAll('>','');
+    if (!cleanedUrl) return;
+    const res = await fetch(cleanedUrl);
+    if (!res.ok) throw new Error(res.statusText);
+    const xml = await res.text();
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const pts = [...doc.querySelectorAll('trkpt')].map(p => ({
+      lat: parseFloat(p.getAttribute('lat')),
+      lon: parseFloat(p.getAttribute('lon'))
+    }));
+    if (pts.length) drawCoursePreviewTrack(pts);
+  } catch (e) {
+    console.error('미리보기 GPX 불러오기 실패:', e);
+    // GPX가 없어도 모달은 뜨게 유지 (거리/고도만 표시)
+  }
+};
+
 
   window.selectCourse = async (id) => {
     const c = all.find(x => x.id === id);
@@ -645,6 +686,64 @@ function drawDetailTrack(coords) {
     strokeOpacity: 1,
     strokeColor: '#06B6D4'
   });
+
+// === Course Preview Map (in Courses tab modal) ===
+let cpMap, cpPolyline, cpMapReady = false;
+let cpStartMarker, cpEndMarker;
+
+function initCoursePreviewMap(){
+  const el = document.getElementById('coursePreviewMap');
+  if (!el) return;
+
+  // 매번 새로 만들어 주는 편이 시트 리사이즈 이슈가 적습니다.
+  cpMap = new kakao.maps.Map(el, {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 5
+  });
+  cpMap.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+  cpMapReady = true;
+  setTimeout(()=> kakao.maps.event.trigger(cpMap, 'resize'), 50);
+}
+
+function drawCoursePreviewTrack(coords){
+  if (!cpMapReady || !coords?.length) return;
+
+  if (cpPolyline) cpPolyline.setMap(null);
+  if (cpStartMarker) cpStartMarker.setMap(null);
+  if (cpEndMarker) cpEndMarker.setMap(null);
+
+  const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lon));
+  cpPolyline = new kakao.maps.Polyline({
+    map: cpMap,
+    path,
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    strokeColor: '#06B6D4'
+  });
+
+  const startPos = path[0];
+  const endPos   = path[path.length-1];
+  cpStartMarker = new kakao.maps.Marker({
+    map: cpMap,
+    position: startPos,
+    image: new kakao.maps.MarkerImage(
+      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+      new kakao.maps.Size(24,35)
+    )
+  });
+  cpEndMarker = new kakao.maps.Marker({
+    map: cpMap,
+    position: endPos,
+    image: new kakao.maps.MarkerImage(
+      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+      new kakao.maps.Size(24,35)
+    )
+  });
+
+  const bounds = new kakao.maps.LatLngBounds();
+  path.forEach(p => bounds.extend(p));
+  cpMap.setBounds(bounds);
+}
 
   // ⭐ 추가: 시작 마커
   const startPos = path[0];

@@ -88,6 +88,31 @@
       <div class="list" id="courseList"></div>
     </section>
 
+<!-- 코스 미리보기 모달 -->
+<div id="coursePreviewSheet" class="sheet" role="dialog" aria-modal="true">
+  <div class="sheet-body" style="max-width:560px;margin:0 auto">
+    <div class="row between" style="margin-bottom:8px">
+      <strong id="cpName">코스 이름</strong>
+      <span class="chip" id="cpCity" style="font-size:11px"></span>
+    </div>
+
+    <div id="coursePreviewMap" style="width:100%;height:260px;border-radius:12px;background:#E5E7EB"></div>
+
+    <div class="muted" style="margin-top:10px">
+      거리 <span id="cpDist">0.0</span> km · 고도 <span id="cpElev">0</span> m
+    </div>
+
+    <div class="row" style="gap:8px;margin-top:12px">
+      <button class="btn" id="cpSelectBtn">이 코스 선택</button>
+      <button class="btn ghost" id="cpCloseBtn" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
     <!-- 클럽 화면 -->
     <section class="screen" data-route="clubs">
       <div class="row between">
