@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#06B6D4">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#06B6D4">
+  <title>FitRoute</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="appbar">
+    <div class="row between">
+      <div class="title">FitRoute</div>
+      <div class="row" style="gap:8px">
+        <!-- <span class="chip" id="statusChip">오프라인</span> -->
+
+      <button class="icon-btn" id="btnSearch" aria-label="검색">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+      </button>
+        <button class="chip" id="btnAuth">로그인</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 홈 화면 -->
+    <section class="screen active" data-route="home">
+      <div class="card">
+        <div class="row between">
+          <div>
+            <div class="muted" style="font-size:12px">오늘 요약</div>
+            <div style="font-weight:800;font-size:22px"><span id="sumDistance">0.0</span> km · <span id="sumTime">00:00:00</span></div>
+          </div>
+          <button class="btn" id="btnQuickStart">빠른 시작</button>
+        </div>
+      </div>
+      
+      <div class="list" id="feed"></div>
+    </section>
+
+    <!-- 기록 화면 -->
+    <section class="screen" data-route="record">
+      <h2 class="section-title">기록</h2>
+      <div class="record-map" id="map">
+        <div class="muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">지도 SDK 연결 예정</div>
+      </div>
+      <div class="metrics" style="height: 80px;">
+        <div class="metric"><div class="muted">거리</div><div class="big"><span id="mDist">0.00</span> km</div></div>
+        <div class="metric"><div class="muted">페이스</div><div class="big" id="mPace">--'--"</div></div>
+        <div class="metric"><div class="muted">시간</div><div class="big" id="mTime">00:00</div></div>
+      </div>
+
+    <!-- ★ 실시간 페이스 스파크라인 -->
+    <div class="card" id="sparkCard" style="padding:10px 12px">
+    <div class="row between">
+        <strong style="font-size:14px">실시간 페이스</strong>
+        <span class="muted" id="sparkPaceLabel">--'--"/km</span>
+    </div>
+    <canvas id="paceSpark" height="60"></canvas>
+    </div>
+
+    <div class="row between">
+    <button class="btn ghost" id="btnChooseRoute">코스 선택</button>
+    <!-- ★ 단일 메인 버튼: START ↔ STOP 토글 -->
+    <button class="cta-circle cta-start" id="btnMain">START</button>
+    <button class="btn ghost" id="btnPause" disabled>일시정지</button>
+    </div>
+    </section>
+
+    <!-- 코스 화면 -->
+    <section class="screen" data-route="courses">
+      <div class="row between">
+        <h2 class="section-title">추천 코스</h2>
+        <select id="courseFilter">
+          <option value="all">전체</option>
+          <option value="running">👟Running</option>
+          <option value="cycling">🚲Cycling</option>
+          <option value="hiking">⛰️Hiking</option>
+        </select>
+      </div>
+      <div class="row" style="gap:8px; margin:8px 0">
+        <input id="courseSearch" placeholder="코스 검색" />
+      </div>
+      <div class="list" id="courseList"></div>
+    </section>
+
+    <!-- 클럽 화면 -->
+    <section class="screen" data-route="clubs">
+      <div class="row between">
+        <h2 class="section-title">클럽</h2>
+        <button class="btn" id="btnOpenCreateClub">New</button>
+      </div>
+      <!-- ▼ 클럽 탭 상단 탭 버튼 (All / My) -->
+      <div id="clubTabs" class="row" style="gap:8px; margin-bottom:8px">
+        <button id="tabClubsAll" class="btn sm active">All</button>
+        <button id="tabClubsMy"  class="btn sm ghost">My</button>
+      </div>
+      <div class="list" id="clubList"></div>
+    </section>
+
+    <!-- ★ 클럽 상세 화면 (신규) -->
+      <section class="screen" data-route="club">
+        <div class="row" style="gap:8px; padding:0 16px">
+          <button class="btn" id="btnBackClubs">← 목록</button>
+          <button class="btn" id="btnEditClub" style="display:none">수정</button>
+          <button class="btn danger" id="btnDeleteClub" style="display:none">삭제</button>
+        </div>
+
+        <div id="clubCover" class="club-cover" style="margin:12px 16px"></div>
+        <div class="card" style="margin:0 16px 12px">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col" style="gap:4px">
+              <strong id="clubTitle">클럽 이름</strong>
+              <span class="chip" id="clubSportChip">Running</span>
+            </div>
+            <div class="row" style="gap:8px">
+              <button class="btn" id="btnJoinClub">가입</button>
+              <button class="btn ghost" id="btnLeaveClub" style="display:none">탈퇴</button>
+            </div>
+          </div>
+          <div class="muted" id="clubDescText" style="margin-top:8px"></div>
+
+          <div class="metrics" style="margin-top:12px">
+            <div class="metric"><div class="muted">총 활동</div><div class="big"><span id="clubActCount">0</span></div></div>
+            <div class="metric"><div class="muted">누적 거리</div><div class="big"><span id="clubTotalDist">0.0</span> km</div></div>
+            <div class="metric"><div class="muted">누적 시간</div><div class="big"><span id="clubTotalTime">00:00:00</span></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 16px 16px">
+          <div class="ntabs" style="margin-bottom:8px">
+            <button class="ntab active" data-tab="feed">피드</button>
+            <button class="ntab" data-tab="leaderboard">순위</button>
+            <button class="ntab" data-tab="members">멤버</button>
+            <button class="ntab" data-tab="requests" id="clubReqTab" style="display:none">신청</button>
+          </div>
+
+          <div class="npanel active" data-tab="feed">
+            <div class="list" id="clubFeed"></div>
+          </div>
+
+          <div class="npanel" data-tab="leaderboard">
+            <div class="list" id="clubLeaderboard"></div>
+          </div>
+
+          <div class="npanel" data-tab="members">
+
+            <div class="row between" style="margin-bottom:8px">
+              <strong>멤버</strong>
+              <span class="muted"><span id="clubMemberCount">0</span>명</span>
+            </div>
+            <div id="clubMembers" class="list"></div>
+          </div>
+          <div class="npanel" data-tab="requests">
+            <div class="list" id="clubReqList"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="sheet" id="editClubSheet">
+        <div class="panel">
+          <h2 class="section-title">클럽 수정</h2>
+          <div class="col" style="gap:10px">
+            <label>클럽 이름</label>
+            <input id="editClubName" placeholder="클럽 이름" />
+            <label>소개</label>
+            <textarea id="editClubDesc" rows="3" placeholder="간단한 소개를 적어주세요"></textarea>
+            <label>커버 이미지</label>
+            <input id="editClubCoverFile" type="file" accept="image/*" hidden />
+            <div class="row" style="gap:8px">
+              <button class="btn" id="btnPickEditCover">이미지 선택</button>
+            </div>
+            <div id="editClubCoverPreview" class="club-cover-preview" style="height:96px; margin-top:8px;"></div>
+
+            <div class="row" style="gap:8px; margin-top:12px">
+              <button class="btn" id="btnCancelEditClub">취소</button>
+              <button class="btn primary" id="btnSaveEditClub">저장</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- 내 정보 -->
+    <section class="screen" data-route="profile">
+      <h2 class="section-title">프로필</h2>
+      <div class="card" id="profileEditCard">
+        <div class="col" style="gap:8px">
+          <!-- ⬇️ 이 블록을 <label for="nickname">닉네임</label> 바로 '위'에 추가 -->
+          <div class="col" style="align-items:center; gap:8px; margin-bottom:8px">
+            <img id="profileAvatar"
+                src="assets/profile/running_profile.png"
+                alt="프로필 이미지"
+                width="96" height="96"
+                style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid #E5E7EB" />
+            <button class="btn sm" id="btnChangeAvatar">프로필 이미지 수정</button>
+          </div>
+          <label for="nickname">닉네임</label>
+          <input id="nickname" placeholder="FitRouteUser" />
+          <!-- 기본 종목 선택 -->
+          <label style="margin-top:4px">기본 종목</label>
+          <div class="pick-sport" id="sportPicker">
+            <button type="button" class="chip select" data-sport="running">👟Running</button>
+            <button type="button" class="chip select" data-sport="cycling">🚲Cycling</button>
+            <button type="button" class="chip select" data-sport="hiking">⛰️Hiking</button>
+          </div>
+          <label for="goal">주간 목표 (km)</label>
+          <input id="goal" type="number" min="0" step="1" placeholder="주간 목표 km를 입력하세요." />
+          <button class="btn primary full" id="btnSaveProfile">저장</button>
+          <div id="goalProgress" class="muted" style="font-size:12px; margin-top:4px; display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row between">
+          <!-- 프로필 탭 - 캘린더 통계 -->
+          <div id="statsCard" class="card" style="margin-top:12px; padding:12px">
+            <div class="row between" style="margin-bottom:8px">
+              <button id="btnCalPrev" class="btn sm ghost">◀</button>
+              <strong id="calMonthLabel">0000.00</strong>
+              <button id="btnCalNext" class="btn sm ghost">▶</button>
+            </div>
+            <div id="calWeekHead" class="row" style="gap:6px; font-size:12px; opacity:.8; margin-bottom:6px">
+              <div style="width:calc((100% - 36px)/7); text-align:center">일</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">월</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">화</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">수</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">목</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">금</div>
+              <div style="width:calc((100% - 36px)/7); text-align:center">토</div>
+            </div>
+            <div id="calGrid" class="row" style="flex-wrap:wrap; gap:6px"></div>
+
+            <div id="calDetail" class="card" style="margin-top:12px; padding:10px">
+              <div class="muted">날짜를 누르면 해당 날의 거리/시간/활동을 보여줍니다.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+                <!-- 프로필 탭 - 로그인/로그아웃 섹션 -->
+          <div id="profileAuth" class="card" style="margin-top:12px; padding:12px">
+            <!-- 로그아웃 버튼 (로그인 상태에서만 보이도록 JS가 토글) -->
+            <div class="row" style="justify-content:center">
+              <button id="btnLogout" class="btn danger" style="display:none">로그아웃</button>
+            </div>
+
+            <!-- 소셜 로그인 버튼들 (로그아웃 상태에서만 보이도록 JS가 토글) -->
+            <div id="loginProviders" style="display:none; gap:8px" class="row">
+              <button id="btnLoginGoogle" class="btn">
+                <img src="assets/Google-logo.png" alt="Google 로고" class="social-logo">
+              </button>
+              <button id="btnLoginKakao"  class="btn">
+                <img src="assets/KakaoTalk_logo.png" alt="Kakao 로고" class="social-logo">
+              </button>
+              <button id="authHint"  class="btn">
+                <img src="assets/email_logo.png" alt="email 로고" class="social-logo">
+              </button>
+            </div>
+            <div id="authTipText" class="muted" style="margin-top:6px; font-size:12px">
+              간편 로그인을 이용해서 로그인을 하세요.
+            </div>
+          </div>
+    </section>
+
+    <!-- 활동 상세 화면 -->
+    <section class="screen" data-route="activity">
+    <!-- 활동 상세 전용 탑바 -->
+    <div class="detail-topbar">
+      <button class="icon-btn" id="btnBackHome" aria-label="뒤로">←</button>
+      <button class="icon-btn" id="btnShareActivity" aria-label="공유">
+        <!-- 간단한 공유 아이콘 (원하면 바꿔도 됨) -->
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M16 5a3 3 0 1 1-2.83 4H13l-4.4 2.2a3 3 0 1 1 0 1.6L13 15a3 3 0 1 1-.17 1.17l-4.42-2.2a3 3 0 1 1 0-3.94L12.83 7A3 3 0 0 1 16 5z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="card" style="margin:12px 16px">
+      <div class="row between" style="position:relative">
+        <strong id="actTitle">활동 제목</strong>
+
+        <!-- 오른쪽: 종목 칩 + … 버튼 -->
+        <div class="row" style="gap:6px">
+          <span class="chip" id="actSport">running</span>
+          <button class="icon-btn" id="btnActMore" aria-label="더보기">⋯</button>
+        </div>
+      </div>
+        <div class="muted" id="actDate" style="margin-top:4px">-</div>
+    </div>
+
+
+  <div class="card" id="actMediaCard" style="margin:0 16px 12px; display:none">
+    <div id="actNotes" class="muted" style="white-space:pre-wrap"></div>
+    <div id="actImages" class="grid4" style="margin-top:8px"></div>
+  </div>
+
+    <div class="record-map" id="detailMap" style="margin:0 16px; height:160px">
+        <div class="muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        지도 SDK 연결 예정
+        </div>
+    </div>
+
+    <div class="metrics" style="margin:10px 16px">
+        <div class="metric"><div class="muted">거리</div><div class="big"><span id="actDist">0.00</span> km</div></div>
+        <div class="metric"><div class="muted">페이스</div><div class="big" id="actPace">--'--"</div></div>
+        <div class="metric"><div class="muted">시간</div><div class="big" id="actTime">00:00</div></div>
+    </div>
+
+    <!-- 페이스 차트 -->
+    <div class="card" id="paceChartCard" style="margin:0 16px 16px;">
+      <div class="row between">
+        <strong>페이스 타임라인</strong>
+        <span class="muted" id="paceSummary">--'--"/km</span>
+      </div>
+      <canvas id="paceChart"></canvas>
+    </div>
+
+
+    <div class="row" style="gap:8px; justify-content:center; padding:0 16px 12px">
+        <button class="btn" id="btnExportGPX">GPX 내보내기</button>
+    </div>
+    </section>
+
+  </main>
+
+<!-- 온보딩 -->
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2 class="section-title" style="margin:0 0 6px">FitRoute 시작하기</h2>
+    <p class="muted" style="margin-top:0">모바일에 최적화된 한국형 운동 소셜 • 이후 Capacitor로 하이브리드 앱 전환 예정</p>
+    <div class="col" style="gap:10px;margin-top:12px">
+      <label>관심 종목</label>
+      <select id="prefSport">
+        <option value="running">👟Running</option>
+        <option value="cycling">🚲Cycling</option>
+        <option value="hiking">⛰️Hiking</option>
+      </select>
+      <button class="btn primary full" id="btnFinishOnboarding">시작</button>
+    </div>
+  </div>
+</div>
+
+  <!-- 하단 탭 -->
+  <nav class="tabbar">
+    <div class="tabs">
+      <a class="tab active" data-link="home">홈</a>
+      <a class="tab" data-link="courses">코스</a>
+      <a class="tab" data-link="record">기록</a>
+      <a class="tab" data-link="clubs">클럽</a>
+      <a class="tab" data-link="profile">프로필</a>
+    </div>
+  </nav>
+</div>
+
+
+<!-- Search overlay -->
+<div id="searchPanel" class="search-panel">
+  <div class="search-box">
+    <div class="search-header">
+      <button class="icon-btn" id="btnCloseSearch" aria-label="닫기">✕</button>
+      <input id="searchInput" placeholder="사람 검색(닉네임, 2글자 이상)" />
+      <button class="btn sm" id="btnSearchGo">검색</button>
+    </div>
+
+  <!-- 검색 결과 -->
+  <div id="searchResults" class="search-results"></div>
+
+  <!-- 내 친구 (탭) -->
+  <h3 class="section-title" style="margin:16px 0 8px">내 친구</h3>
+
+  <div class="ntabs">
+    <button class="ntab active" data-ntab="following" id="tabFollowing">Following</button>
+    <button class="ntab" data-ntab="followers" id="tabFollowers">Followers</button>
+  </div>
+
+  <div class="npanels">
+    <div id="followingList" class="npanel active" data-ntab="following"></div>
+    <div id="followersList" class="npanel" data-ntab="followers"></div>
+  </div>
+
+
+  </div>
+</div>
+
+
+
+<!-- 상세 액션시트: ... -> 수정/삭제 -->
+<div class="sheet" id="actionSheet">
+  <div class="panel action-panel">
+    <button class="sheet-item" id="asAddMedia">사진 추가</button>
+    <button class="sheet-item" id="asEdit">활동 수정</button>
+    <button class="sheet-item danger" id="asDelete">활동 삭제</button>
+    <button class="sheet-item" id="asCancel">취소</button>
+  </div>
+</div>
+
+<!-- 활동 편집 시트 (제목/설명/사진) -->
+<div class="sheet" id="editActivitySheet">
+  <div class="panel">
+    <h2 class="section-title" style="margin:0 0 8px">활동 수정</h2>
+
+    <div class="col" style="gap:10px">
+      <label>제목</label>
+      <input id="editTitle" placeholder="활동 제목" />
+
+      <label>설명</label>
+      <textarea id="editNotes" rows="4" placeholder="설명을 입력하세요(선택)"></textarea>
+
+      <label>사진</label>
+      <input id="editFiles" type="file" accept="image/*" multiple hidden />
+      <div class="row" style="gap:8px">
+        <button class="btn" id="btnPickPhotos">사진 선택</button>
+        <button class="btn ghost" id="btnClearNew">선택 비우기</button>
+      </div>
+      <div id="editGallery" class="grid4 selectable" style="margin-top:8px"></div>
+
+      <div class="row" style="gap:8px; margin-top:12px">
+        <button class="btn" id="btnEditCancel">취소</button>
+        <button class="btn primary" id="btnEditSave">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 프로필 이미지 선택 시트 -->
+<div class="sheet" id="avatarSheet">
+  <div class="panel">
+    <h2 class="section-title" style="margin:0 0 8px">프로필 이미지 선택</h2>
+
+    <!-- 3개 캐릭터 썸네일이 JS로 채워집니다 -->
+    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+
+      <!-- 갤러리에서 선택 -->
+      <div class="row" style="gap:8px; margin-top:8px">
+        <input id="avatarFile" type="file" accept="image/*" hidden />
+        <button class="btn" id="btnPickAvatar">내 사진에서 선택</button>
+        <span class="muted" style="font-size:12px">JPG/PNG, 최대 5MB</span>
+      </div>
+
+    <div class="row" style="gap:8px; margin-top:12px">
+      <button class="btn" id="btnCancelAvatar">취소</button>
+      <button class="btn primary" id="btnSaveAvatar">저장</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Fullscreen Photo Viewer -->
+<div id="photoViewer" class="pv" aria-hidden="true" style="display:none">
+  <div class="pv-backdrop" data-pv-close></div>
+  <img id="pvImg" alt="">
+  <button class="pv-close" data-pv-close aria-label="닫기">✕</button>
+</div>
+
+<!-- 댓글 시트 -->
+<div class="sheet" id="commentSheet">
+  <div class="panel" style="padding-bottom:calc(24px + env(safe-area-inset-bottom))">
+    <h2 class="section-title" style="margin:0 0 8px">댓글</h2>
+
+    <div id="commentList" class="list" style="max-height:40vh;overflow:auto"></div>
+
+    <div class="row" style="gap:8px;margin-top:12px">
+      <input id="commentInput" placeholder="댓글을 입력하세요" />
+      <button class="btn primary" id="btnSendComment">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 클럽 생성 시트 -->
+<div class="sheet" id="createClubSheet">
+  <div class="panel">
+    <h2 class="section-title" style="margin:0 0 8px">클럽 만들기</h2>
+
+    <div class="col" style="gap:10px">
+      <label>클럽 이름</label>
+      <input id="clubName" placeholder="예) 한강 러너스" />
+
+      <label>종목</label>
+      <select id="clubSport">
+        <option value="running">👟Running</option>
+        <option value="cycling">🚲Cycling</option>
+        <option value="hiking">⛰️Hiking</option>
+      </select>
+
+      <label>소개</label>
+      <textarea id="clubDesc" rows="3" placeholder="간단한 소개를 적어주세요"></textarea>
+
+      <label>커버 이미지 (선택)</label>
+      <input id="clubCoverFile" type="file" accept="image/*" hidden />
+      <div class="row" style="gap:8px">
+        <button class="btn" id="btnPickClubCover">이미지 선택</button>
+        <button class="btn ghost" id="btnClearClubCover">선택 비우기</button>
+      </div>
+      <div id="clubCoverPreview" class="club-cover-preview muted" style="height:96px; background:#F3F4F6; border:1px solid #E5E7EB; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+        미리보기 없음
+      </div>
+
+      <div class="row" style="gap:8px; margin-top:12px">
+        <button class="btn" id="btnCancelCreateClub">취소</button>
+        <button class="btn primary" id="btnCreateClub">생성</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=d97ef389eb1213d408c89cb728fcc3f3&libraries=services"></script>
+<script src="app.js"></script>
+</body>
+</html>
