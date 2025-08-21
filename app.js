@@ -407,7 +407,7 @@ window.previewCourse = async (id) => {
 
   // 3) 모달 열고 지도 초기화
   openSheet(sheet);
-  initCoursePreviewMap();
+  window.initCoursePreviewMap();
 
   // 4) GPX 로드해서 프리뷰 지도에 라인 그리기
   try {
@@ -421,7 +421,7 @@ window.previewCourse = async (id) => {
       lat: parseFloat(p.getAttribute('lat')),
       lon: parseFloat(p.getAttribute('lon'))
     }));
-    if (pts.length) drawCoursePreviewTrack(pts);
+    if (pts.length) window.drawCoursePreviewTrack(pts);
   } catch (e) {
     console.error('미리보기 GPX 불러오기 실패:', e);
     // GPX가 없어도 모달은 뜨게 유지 (거리/고도만 표시)
@@ -566,63 +566,6 @@ function setSportPickerUI(value){
 let kakaoMap, kakaoPolyline, mapReady = false;
 let startMarker, endMarker; // ⭐ 추가: 시작/종료 마커 전역 변수
 
-function initCoursePreviewMap(){
-  const el = document.getElementById('coursePreviewMap');
-  if (!el) return;
-
-  // 매번 새로 만들어 주는 편이 시트 리사이즈 이슈가 적습니다.
-  cpMap = new kakao.maps.Map(el, {
-    center: new kakao.maps.LatLng(37.5665, 126.9780),
-    level: 5
-  });
-  cpMap.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
-  cpMapReady = true;
-  setTimeout(()=> kakao.maps.event.trigger(cpMap, 'resize'), 50);
-}
-
-function drawCoursePreviewTrack(coords){
-  if (!cpMapReady || !coords?.length) return;
-
-  if (cpPolyline) cpPolyline.setMap(null);
-  if (cpStartMarker) cpStartMarker.setMap(null);
-  if (cpEndMarker) cpEndMarker.setMap(null);
-
-  const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lon));
-  cpPolyline = new kakao.maps.Polyline({
-    map: cpMap,
-    path,
-    strokeWeight: 4,
-    strokeOpacity: 1,
-    strokeColor: '#06B6D4'
-  });
-
-  const startPos = path[0];
-  const endPos   = path[path.length-1];
-  cpStartMarker = new kakao.maps.Marker({
-    map: cpMap,
-    position: startPos,
-    image: new kakao.maps.MarkerImage(
-      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
-      new kakao.maps.Size(24,35)
-    )
-  });
-  cpEndMarker = new kakao.maps.Marker({
-    map: cpMap,
-    position: endPos,
-    image: new kakao.maps.MarkerImage(
-      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
-      new kakao.maps.Size(24,35)
-    )
-  });
-
-  const bounds = new kakao.maps.LatLngBounds();
-  path.forEach(p => bounds.extend(p));
-  cpMap.setBounds(bounds);
-}
-
-
-
-
 function initKakaoMap() {
   
   if (mapReady) return;
@@ -744,10 +687,6 @@ function drawDetailTrack(coords) {
     strokeColor: '#06B6D4'
   });
 
-// === Course Preview Map (in Courses tab modal) ===
-let cpMap, cpPolyline, cpMapReady = false;
-let cpStartMarker, cpEndMarker;
-
   // ⭐ 추가: 시작 마커
   const startPos = path[0];
   const startImageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png';
@@ -774,6 +713,74 @@ let cpStartMarker, cpEndMarker;
   path.forEach(p => bounds.extend(p));
   detailMap.setBounds(bounds);
 }
+
+// === Course Preview Map (in Courses tab modal) [GLOBAL] ===
+window.cpMap = null;
+window.cpPolyline = null;
+window.cpMapReady = false;
+window.cpStartMarker = null;
+window.cpEndMarker = null;
+
+window.initCoursePreviewMap = function(){
+  const el = document.getElementById('coursePreviewMap');
+  if (!el) return;
+
+  // 모달 안에서 매번 새로 생성
+  window.cpMap = new kakao.maps.Map(el, {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 5
+  });
+  window.cpMap.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+  window.cpMapReady = true;
+
+  // 시트 오픈 직후 리사이즈 반영
+  setTimeout(()=> kakao.maps.event.trigger(window.cpMap, 'resize'), 50);
+};
+
+window.drawCoursePreviewTrack = function(coords){
+  if (!window.cpMapReady || !coords?.length) return;
+
+  if (window.cpPolyline) window.cpPolyline.setMap(null);
+  if (window.cpStartMarker) window.cpStartMarker.setMap(null);
+  if (window.cpEndMarker) window.cpEndMarker.setMap(null);
+
+  const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lon));
+  window.cpPolyline = new kakao.maps.Polyline({
+    map: window.cpMap,
+    path,
+    strokeWeight: 4,
+    strokeOpacity: 1,
+    strokeColor: '#06B6D4'
+  });
+
+  const startPos = path[0];
+  const endPos   = path[path.length-1];
+
+  window.cpStartMarker = new kakao.maps.Marker({
+    map: window.cpMap,
+    position: startPos,
+    image: new kakao.maps.MarkerImage(
+      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+      new kakao.maps.Size(24, 35)
+    )
+  });
+
+  window.cpEndMarker = new kakao.maps.Marker({
+    map: window.cpMap,
+    position: endPos,
+    image: new kakao.maps.MarkerImage(
+      'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+      new kakao.maps.Size(24, 35)
+    )
+  });
+
+  const bounds = new kakao.maps.LatLngBounds();
+  path.forEach(p => bounds.extend(p));
+  window.cpMap.setBounds(bounds);
+};
+
+
+
 
 // 서버에서 단일 활동의 좌표만 로드
 async function fetchActivityCoordsFromCloud(id){
