@@ -1152,3 +1152,7 @@ input, select, textarea{
   .cp-modal{ width: 96vw; border-radius: 14px; }
   #coursePreviewMap{ height: 42vh; }
 }
+
+#coursePreviewSheet.muted {
+  color:rgb(0, 0, 0)1;
+}
