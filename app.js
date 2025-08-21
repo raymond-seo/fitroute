@@ -435,7 +435,6 @@ window.previewCourse = async (id) => {
   };
   const close = () => sheet.classList.remove('show');
   document.getElementById('cpCloseBtn').onclick = close;
-  document.getElementById('btnCloseCoursePreview').onclick = close;
 
   // 바깥(오버레이) 클릭하면 닫기 (모달 내부 클릭은 유지)
   sheet.onclick = (e) => {
