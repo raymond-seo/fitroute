@@ -391,7 +391,7 @@ window.previewCourse = async (id) => {
   document.getElementById('cpDist').textContent  = (c.distance || 0).toFixed(1);
   document.getElementById('cpElev').textContent  = Math.round(c.elev || 0);
 
-  const cityWrap = document.getElementById('cpCityWrap');
+  const cityWrap = document.getElementById('cpCity');
   if (c.city) {
     cityWrap.style.display = '';
     document.getElementById('cpCity').textContent = c.city;
@@ -442,7 +442,6 @@ window.previewCourse = async (id) => {
     if (e.target === sheet) close();
   };
 };
-
 
 
   window.selectCourse = async (id) => {
