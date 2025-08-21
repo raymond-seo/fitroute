@@ -428,13 +428,13 @@ window.previewCourse = async (id) => {
   }
 
   // 4) 버튼/닫기 바인딩
-  document.getElementById('btnCpSelect').onclick = () => {
+  document.getElementById('cpSelectBtn').onclick = () => {
     window.selectedCourse = c;
     sheet.classList.remove('show');
     alert(`'${c.name}' 코스를 선택했습니다.`);
   };
   const close = () => sheet.classList.remove('show');
-  document.getElementById('btnCpClose').onclick = close;
+  document.getElementById('cpCloseBtn').onclick = close;
   document.getElementById('btnCloseCoursePreview').onclick = close;
 
   // 바깥(오버레이) 클릭하면 닫기 (모달 내부 클릭은 유지)
