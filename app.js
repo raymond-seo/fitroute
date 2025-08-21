@@ -386,47 +386,63 @@ window.previewCourse = async (id) => {
   const c = all.find(x => x.id === id);
   if (!c) return;
 
-  // 1) 모달 텍스트 채우기
-  document.getElementById('cpName').textContent = c.name || '코스';
-  const cityEl = document.getElementById('cpCity');
-  cityEl.textContent = c.city || '';
-  cityEl.style.display = c.city ? '' : 'none';
-  document.getElementById('cpDist').textContent = (c.distance || 0).toFixed(1);
-  document.getElementById('cpElev').textContent = Math.round(c.elev || 0);
+  // 1) 텍스트/수치 채우기
+  document.getElementById('cpTitle').textContent = c.name || '코스 미리보기';
+  document.getElementById('cpDist').textContent  = (c.distance || 0).toFixed(1);
+  document.getElementById('cpElev').textContent  = Math.round(c.elev || 0);
 
-  // 2) 버튼 바인딩
+  const cityWrap = document.getElementById('cpCityWrap');
+  if (c.city) {
+    cityWrap.style.display = '';
+    document.getElementById('cpCity').textContent = c.city;
+  } else {
+    cityWrap.style.display = 'none';
+  }
+
+  // 2) 모달 열기
   const sheet = document.getElementById('coursePreviewSheet');
-  document.getElementById('cpCloseBtn').onclick = () => closeSheet(sheet);
-  document.getElementById('cpSelectBtn').onclick = async () => {
-    // 코스 선택 후 기록 화면으로 이동하여 라인 그리기
-    window.selectedCourse = c;
-    selectedCourse = c;
-    closeSheet(sheet);
-    await loadAndDrawGpx(c.gpx); // 기존 함수: record 화면으로 전환 + 지도 드로잉
-  };
+  sheet.classList.add('show');
 
-  // 3) 모달 열고 지도 초기화
-  openSheet(sheet);
+  // 3) 지도 초기화 + 경로 그리기
   window.initCoursePreviewMap();
 
-  // 4) GPX 로드해서 프리뷰 지도에 라인 그리기
-  try {
-    const cleanedUrl = (c.gpx || '').trim().replaceAll('<','').replaceAll('>','');
-    if (!cleanedUrl) return;
-    const res = await fetch(cleanedUrl);
-    if (!res.ok) throw new Error(res.statusText);
-    const xml = await res.text();
-    const doc = new DOMParser().parseFromString(xml, 'application/xml');
-    const pts = [...doc.querySelectorAll('trkpt')].map(p => ({
-      lat: parseFloat(p.getAttribute('lat')),
-      lon: parseFloat(p.getAttribute('lon'))
-    }));
-    if (pts.length) window.drawCoursePreviewTrack(pts);
-  } catch (e) {
-    console.error('미리보기 GPX 불러오기 실패:', e);
-    // GPX가 없어도 모달은 뜨게 유지 (거리/고도만 표시)
+  if (c.gpx) {
+    try {
+      const cleanedUrl = c.gpx.trim().replaceAll('<', '').replaceAll('>', '');
+      const res = await fetch(cleanedUrl);
+      if (!res.ok) throw new Error('GPX 로드 실패');
+      const xml = await res.text();
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      const pts = [...doc.querySelectorAll('trkpt')].map(p => ({
+        lat: parseFloat(p.getAttribute('lat')),
+        lon: parseFloat(p.getAttribute('lon'))
+      }));
+      if (pts.length) {
+        window.drawCoursePreviewTrack(pts);
+        // 모달이 열리고 난 뒤 한 번 더 리사이즈 트리거
+        setTimeout(() => kakao.maps.event.trigger(window.cpMap, 'resize'), 120);
+      }
+    } catch (e) {
+      console.warn('미리보기 GPX 불러오기 실패:', e);
+    }
   }
+
+  // 4) 버튼/닫기 바인딩
+  document.getElementById('btnCpSelect').onclick = () => {
+    window.selectedCourse = c;
+    sheet.classList.remove('show');
+    alert(`'${c.name}' 코스를 선택했습니다.`);
+  };
+  const close = () => sheet.classList.remove('show');
+  document.getElementById('btnCpClose').onclick = close;
+  document.getElementById('btnCloseCoursePreview').onclick = close;
+
+  // 바깥(오버레이) 클릭하면 닫기 (모달 내부 클릭은 유지)
+  sheet.onclick = (e) => {
+    if (e.target === sheet) close();
+  };
 };
+
 
 
   window.selectCourse = async (id) => {
